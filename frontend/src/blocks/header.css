@@ -1,0 +1,33 @@
+.header {
+  max-width: 880px;
+  width: 100%;
+  max-height: 100%;
+  margin: 45px auto 40px auto;
+  padding: 0px;
+}
+
+.header__image {
+  width: 173px;
+  height: 33px;
+  opacity: 1px;
+  margin-bottom: 41px;
+}
+
+.header__email {
+  position: absolute;
+  right: 40px; /* separa 40px del borde derecho */
+  top: 50%;
+  transform: translateY(-50%); /* centra verticalmente */
+  font-size: 16px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.header__logout-btn {
+}
+@media screen and (max-width: 879px) {
+  .header__image {
+    width: 126px;
+    margin-left: 27px;
+  }
+}

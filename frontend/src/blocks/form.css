@@ -1,0 +1,19 @@
+.input-name-error,
+.input-hobbie-error,
+.add-title-error,
+.add-image-error
+{
+color: aqua;
+
+}
+
+.form__input_type_error {
+    color: #ff0000;
+    margin-bottom: 5px;
+    font-family: Inter;
+    font-weight: 400;
+    line-height: 19px;
+    height: 16px;
+    width: 358px;
+
+  }

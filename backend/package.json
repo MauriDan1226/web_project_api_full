@@ -1,0 +1,29 @@
+{
+  "name": "web_project_around_express",
+  "version": "1.0.0",
+  "description": "ejmlo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "npx eslint .",
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MauriDan1226/web_project_around_express.git"
+  },
+  "author": "Mauricio Ramirez",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MauriDan1226/web_project_around_express/issues"
+  },
+  "homepage": "https://github.com/MauriDan1226/web_project_around_express#readme",
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.18.1",
+    "nodemon": "^3.1.10"
+  }
+}
