@@ -1,9 +1,25 @@
 .page {
-  margin: auto;
-  font-size: 16px;
-  line-height: 20px;
-  color: white;
-  max-width: 1600px;
+  max-width: 320px;
   width: 100%;
-  display: block;
+  height: 2814px;
+}
+
+@media screen and (min-width: 768px) {
+  .page {
+    max-width: 768px;
+    width: 100%;
+    height: 2000px;
+    text-align: center;
+    margin: auto;
+  }
+}
+
+@media screen and (min-width: 1280px) {
+  .page {
+    max-width: 1280px;
+    width: 100%;
+    height: 1217px;
+    text-align: center;
+    margin: auto;
+  }
 }

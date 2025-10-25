@@ -1,26 +1,35 @@
-import closeIcon from "../../../../images/CloseIcon.png";
+import React, { useEffect } from "react";
 
-const Popup = ({ title = "", children, onClose }) => {
+function Popup({ isOpen, onClose, children }) {
+  
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleEscClose(e) {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    }
+
+    document.addEventListener("keydown", handleEscClose);
+    return () => document.removeEventListener("keydown", handleEscClose);
+  }, [isOpen, onClose]);
+
+
+  function handleOverlayClick(e) {
+    if (e.target.classList.contains("popup")) {
+      onClose();
+    }
+  }
+
   return (
-    <div className="popup" id="popup-edit">
-      <div
-        className={`popup__info ${
-          !title ? "popup__content_content_image" : ""
-        }`}
-      >
-        <button
-          className="popup__close"
-          aria-label="Close modal"
-          onClick={onClose}
-        >
-          <img src={closeIcon} alt="tache" />
-        </button>
-
-        {title && <p className="popup__title">{title}</p>}
-        {children}
-      </div>
+    <div
+      className={`popup ${isOpen ? "popup__opened" : ""}`}
+      onMouseDown={handleOverlayClick}
+    >
+      <div className="popup__container">{children}</div>
     </div>
   );
-};
+}
 
 export default Popup;

@@ -1,49 +1,41 @@
-import basura from "../../../../images/Trash.svg";
-import corazon from "../../../../images/VectorCorazon.svg";
-import { useContext } from "react";
-import CurrentUserContext from "../../../../contexts/CurrentUserContext";
+import React from "react";
 
-export default function Card({ card, onCardLike, onCardDelete }) {
-  const { currentUser } = useContext(CurrentUserContext);
-  const { name, link, isLiked } = card;
+function Card({ card, onDelete, onLike, onClick, currentUserId }) {
+  const isOwner = card.owner && card.owner._id === currentUserId;
+  const isLiked = card.likes.includes(currentUserId);
 
-  // Verifica si el usuario actual le ha dado "like" a la tarjeta
-  const cardLikeButtonClassName = `card__button ${
-    isLiked ? "card__black" : ""
-  }`;
-  function handleLikeClick() {
-    onCardLike(card);
-  }
-
-  function handleDeleteClick() {
-    onCardDelete(card);
-  }
 
   return (
-    <div className="card">
-      <button
-        src={basura}
-        className="card__trash"
-        aria-label="Delete card"
-        type="button"
-        onClick={handleDeleteClick}
-      ></button>
-      <img className="card__image" src={link} alt="fotografía de lago" />
-      <div className="card__info">
-        <p className="card__title">{name}</p>
+    <li key={card._id} className="cards__item">
+      
         <button
-          className="card__button"
-          aria-label="Like card"
-          type="button"
-          onClick={handleLikeClick}
-        >
-          <img
-            src={corazon}
-            alt="boton corazon"
-            className={cardLikeButtonClassName}
-          />
-        </button>
+          className="cards__item-delete"
+          onClick={onDelete}
+          aria-label="Eliminar tarjeta"
+        />
+
+      <img
+        className="cards__item-img"
+        src={card.link}
+        alt={card.name}
+        onClick={onClick}
+      />
+
+      <div className="cards__item-info">
+        <p className="cards__item-name">{card.name}</p>
+        <button
+          className={`cards__item-like ${isLiked ? "cards__item-like_active" : ""}`}
+          onClick={() => {
+            onLike();
+          }}
+          aria-label="Me gusta"
+        />
       </div>
-    </div>
+    </li>
   );
 }
+
+export default Card;
+
+
+

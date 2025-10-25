@@ -1,57 +1,117 @@
-const User = require("../models/user");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
+const UnauthorizedError = require('../errors/unauthorizedError');
 
-module.exports.getUsers = (req, res) => {
-  User.find({})
-    .then((users) => res.status(200).send(users))
-    .catch((err) =>
-      res.status(500).send({ message: "Error al leer datos de usuarios" })
-    );
+const { JWT_SECRET = 'dev-secret' } = process.env;
+
+// POST /signup
+
+module.exports.createUser = (req, res, next) => {
+  const { name = 'Jacques Cousteau', about = 'Explorador', avatar = 'https://practicum-content.s3.us-west-1.amazonaws.com/resources/moved_avatar_1604080799.jpg', email, password } = req.body;
+  
+
+  if (!email || !password) {
+    return res.status(400).send({ message: 'Email y contraseña son obligatorios' });
+  }
+
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({ name, about, avatar, email, password: hash }))
+    .then((user) => res.status(201).send({
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+    }))
+    .catch((err) => {
+      console.error('Error creando usuario:', err);
+
+      if (err.code === 11000) { 
+        return res.status(409).send({ message: 'El email ya está registrado' });
+      }
+      if (err.name === 'ValidationError') {
+        return res.status(400).send({ message: 'Datos inválidos' });
+      }
+      return next(err); 
+    });
 };
 
-module.exports.getUserById = (req, res) => {
-  User.findById(req.params.id)
-    .orFail()
-    .then((user) => res.status(200).send(user))
-    .catch((err) =>
-      res.status(404).send({ message: "ID de usuario no encontrado" })
-    );
+
+// POST /signin
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).send({ message: 'Email y contraseña son obligatorios' });
+  }
+
+  User.findOne({ email }).select('+password')
+    .then((user) => {
+      console.log('🧪 Usuario:', user);
+      if (!user) {
+        return res.status(401).send({ message: 'Usuario no encontrado' });
+      }
+
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            return res.status(401).send({ message: 'Contraseña incorrecta' });
+          }
+
+          const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+          res.send({ token });
+        });
+    })
+    .catch((err) => {
+      console.error('Error en /signin:', err);
+      res.status(500).send({ message: 'Error interno del servidor' });
+    });
 };
 
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(201).send(user))
-    .catch((err) => res.status(404).send({ message: err.message }));
+// GET /users/me
+module.exports.getCurrentUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .then((user) => {
+      if (!user) {
+        return res.status(404).send({ message: 'Usuario no encontrado' });
+      }
+      res.send(user);
+    })
+    .catch(next);
 };
 
-module.exports.setUserInfo = (req, res) => {
+// PATCH /users/me
+module.exports.updateUserProfile = (req, res, next) => {
   const { name, about } = req.body;
+
   User.findByIdAndUpdate(
     req.user._id,
     { name, about },
-    {
-      new: true,
-      runValidators: true,
-      upsert: true,
-    }
+    { new: true, runValidators: true }
   )
-    .orFail()
-    .then((user) => res.status(200).send(user))
-    .catch((err) => res.status(400).send({ message: err.message }));
+    .then((user) => {
+      if (!user) {
+        return res.status(404).send({ message: 'Usuario no encontrado' });
+      }
+      res.send(user);
+    })
+    .catch(next);
 };
 
-module.exports.setUserAvatar = (req, res) => {
+module.exports.updateUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
+
   User.findByIdAndUpdate(
     req.user._id,
     { avatar },
-    {
-      new: true,
-      runValidators: true,
-      upsert: true,
-    }
+    { new: true, runValidators: true }
   )
-    .orFail()
-    .then((user) => res.status(200).send(user))
-    .catch((err) => res.status(400).send({ message: err.message }));
+    .then((user) => {
+      if (!user) {
+        return res.status(404).send({ message: 'Usuario no encontrado' });
+      }
+      res.send(user);
+    })
+    .catch(next);
 };

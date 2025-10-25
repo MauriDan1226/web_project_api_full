@@ -1,30 +1,33 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
+const validator = require('validator');
 
 const userSchema = new mongoose.Schema({
-  name: {
+  email: {
     type: String,
     required: true,
-    minlength: 2,
-    maxlength: 30,
+    unique: true,
+    validate: {
+      validator: (v) => validator.isEmail(v),
+      message: 'Correo inválido',
+    },
+  },
+  password: {
+    type: String,
+    required: true,
+    select: false, 
+  },
+  name: {
+    type: String,
+    default: 'Jacques Cousteau',
   },
   about: {
     type: String,
-    required: true,
-    minlength: 2,
-    maxlength: 30,
+    default: 'Explorador',
   },
   avatar: {
     type: String,
-    required: true,
-    validate: {
-      validator(v) {
-        return v.match(
-          /^(https?:\/\/)(www\.)?([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)(\/[a-zA-Z0-9-._~:/?%#\[\]@!$&'()*+,;=]*)?(#.*)?$/gi
-        );
-      },
-      message: "Introducir URL valido",
-    },
+    default: 'https://practicum-content.s3.us-west-1.amazonaws.com/resources/moved_avatar_1604080799.jpg',
   },
 });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema);

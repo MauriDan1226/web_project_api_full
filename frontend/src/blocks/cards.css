@@ -1,28 +1,134 @@
 .cards {
-  max-width: 880px;
-  width: 100%;
-  margin: 50px auto 67px auto;
-  justify-items: center;
-  align-items: center;
-  opacity: 0px;
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-row-gap: 20px;
-  grid-column-gap: 17px;
-  padding: 0px;
-}
-@media screen and (min-width: 581px) and (max-width: 879px) {
-  .cards {   
-    grid-template-columns: repeat(2, 1fr);
-   
-  }
+    max-width: 282px;
+    width: 100%;
+    height: 2266px;
+    margin-left: 19px;
+
 }
 
-@media screen and (max-width: 580px) {
-  .cards {
-    
+.cards__container {
+    display: grid;
     grid-template-columns: 1fr;
-    
-  }
+    gap: 10px;
+
+}
+
+
+.cards__item {
+    max-width: 282px;
+    width: 100%;
+    height: 361px;
+    border-radius: 10px 10px 10px 10px;
+    background-color: white;
+    margin-bottom: 19px;
+    position: relative;
+
+}
+
+.cards__item-delete {
+    width: 21px;
+    height: 19px;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: url('../images/trash.svg') center/contain no-repeat;
+    background-color: transparent;
+    border: none;
+
+}
+
+.cards__item-delete:hover {
+    opacity: 0.5;
+}
+
+
+.cards__item-img {
+    max-width: 282px;
+    width: 100%;
+    height: 282px;
+    border-radius: 10px 10px 0px 0px;
+    cursor: pointer;
+
+}
+
+.cards__item-info {
+    display: flex;
+    justify-content: space-between;
+    background-color: white;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.cards__item-name {
+    font-family: Inter;
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 29.05px;
+    margin-left: 15px;
+    background-color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cards__item-like {
+    margin-right: 15px;
+    width: 21px;
+    height: 19px;
+    background: url('../images/group.svg') center/contain no-repeat;
+    background-color: white;
+    cursor: pointer;
+    border: none;
+}
+
+.cards__item-like:hover {
+    opacity: 0.5;
+}
+
+.cards__item-like_active {
+    background: url('../images/active.png') center/contain no-repeat;
+}
+
+
+@media screen and (min-width: 768px) {
+
+    .cards {
+        max-width: 568px;
+        width: 100%;
+        height: 200px;
+        margin: 100px auto;
+    }
+
+
+    .cards__container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        text-align: center;
+        gap: 10px;
+
+    }
+
+}
+
+
+
+@media screen and (min-width: 1280px) {
+    .cards {
+        max-width: 880px;
+        width: 100%;
+        height: 743px;
+        margin-top: 100px;
+        margin-left: auto;
+        margin-right: auto;
+        justify-content: center;
+    }
+
+    .cards__container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        text-align: center;
+        gap: 10px;
+    }
+
 }

@@ -1,67 +1,48 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-import InfoTooltip from "../InfoTooltip/InfoTooltip";
-import "../../blocks/login.css";
 
-function Login({ onLogin, tooltip, setTooltip, loading = false }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+function Login({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onLogin(email, password); // En App.jsx: authorize // guardar token // checkToken
+    onLogin(email, password);
   };
 
-  return (
-    <>
-      <main className="login">
-        <form onSubmit={handleSubmit} className="login__container" noValidate>
-          <h2 className="login__title">Iniciar Sesión</h2>
+  console.log('🟡 Login renderizado, onLogin:', onLogin);
 
+    return (
+      <div className="auth">
+        <h2 className="auth__title">Inicia sesión</h2>
+        <form className="auth__form" onSubmit={handleSubmit}>
           <input
-            className="login__input"
-            name="email"
             type="email"
+            className="auth__input"
             placeholder="Correo electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
             required
           />
-
           <input
-            className="login__input"
-            name="password"
             type="password"
+            className="auth__input"
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
             required
           />
-
-          <button type="submit" className="login__button" disabled={loading}>
-            {loading ? "Entrando..." : "Iniciar Sesión"}
+          <button className="auth__submit-button" type="submit">
+            Inicia sesión
           </button>
         </form>
-
-        <p className="login__redirect">
-          ¿No eres usuario?{" "}
-          <Link to="/signup" className="login__link">
-            Regístrate aquí
-          </Link>
+        <p className="auth__text">
+          ¿Aun no eres miembro? <Link to="/signup" className="auth__link">¡Regístrate aquí!</Link>
         </p>
-      </main>
-
-      <InfoTooltip
-        isOpen={tooltip.open}
-        isSuccess={tooltip.success}
-        message={tooltip.message}
-        onClose={() => setTooltip({ ...tooltip, open: false })}
-      />
-    </>
-  );
-}
+      </div>
+    );
+  }
 
 export default Login;
