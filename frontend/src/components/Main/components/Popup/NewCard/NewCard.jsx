@@ -1,76 +1,57 @@
-import React, { useState, useEffect } from "react";
-import close from "../../../../../images/close.svg";
+import { useState } from "react";
 
-function NewCard({ isOpen, onClose, onAddCard, isLoading }) {
-    const [name, setName] = useState("");
-    const [link, setLink] = useState("");
-    const [nameError, setNameError] = useState("");
-    const [linkError, setLinkError] = useState("");
-    const [isFormValid, setIsFormValid] = useState(false);
+function NewCard({ onAddPlaceSubmit }) {
+  const [name, setName] = useState("");
+  const [link, setLink] = useState("");
 
-    useEffect(() => {
-        if (isOpen) {
-            setName("");
-            setLink("");
-            setNameError("");
-            setLinkError("");
-            setIsFormValid(false);
-        }
-    }, [isOpen]);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onAddPlaceSubmit({ name: name, link: link });
+    setName("");
+    setLink("");
+  };
+  return (
+    <form
+      id="edit-profile-form"
+      className="popup__form"
+      onSubmit={handleSubmit}
+      noValidate
+    >
+      <input
+        type="text"
+        value={name}
+        className="popup__input"
+        id="add-title"
+        name="title"
+        placeholder="Titulo"
+        minLength="2"
+        maxLength="30"
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
 
-    function handleSubmit(e) {
-        e.preventDefault();
-        onAddCard({
-            name: name,
-            link: link,
-            liked: false
-        });
-    }
+      <span className="form__input_type_error add-title-error"></span>
 
-    return (
-        <>
-            <button onClick={onClose}>
-                <img className="popup-close" src={close} alt="icono de cerrar" />
-            </button>
-            <form className="popup__form" onSubmit={handleSubmit}>
-                <h2 className="popup__form-title">Nuevo Lugar</h2>
-                <input
-                    className="popup__input"
-                    type="text"
-                    placeholder="Título"
-                    id="name"
-                    value={name}
-                    onChange={(e) => {
-                        setName(e.target.value);
-                        setNameError(e.target.validationMessage);
-                        setIsFormValid(e.target.closest("form").checkValidity());
-                    }}
-                    required
-                    minLength="2"
-                    maxLength="30"
-                />
-                <span className="popup__input-error" id="name-error">{nameError}</span>
-                <input
-                    className="popup__input"
-                    type="url"
-                    placeholder="Enlace de la imagen"
-                    id="link"
-                    name="link"
-                    value={link}
-                    onChange={(e) => {
-                        setLink(e.target.value);
-                        setLinkError(e.target.validationMessage);
-                        setIsFormValid(e.target.closest("form").checkValidity());
-                    }}
-                    required
-                />
-                <span className="popup__input-error" id="link-error">{linkError}</span>
-                <button className={`popup__button ${!isFormValid ? "popup__button_disabled" : ""}`} type="submit" disabled={!isFormValid}>
-                    {isLoading ? "Agregando..." : "Agregar"}
-                </button>
-            </form>
-        </>
-    );
+      <input
+        type="url"
+        className="popup__input"
+        id="add-image"
+        name="name"
+        placeholder="Enlace a la imagen"
+        minLength="2"
+        maxLength="200"
+        value={link}
+        onChange={(e) => setLink(e.target.value)}
+        required
+      />
+
+      <span className="form__input_type_error input-hobbie-error"></span>
+
+      <button type="submit" className="popup__button">
+        Guardar
+      </button>
+    </form>
+  );
 }
 
 export default NewCard;

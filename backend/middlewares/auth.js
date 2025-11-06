@@ -1,23 +1,21 @@
-const jwt = require('jsonwebtoken');
-
-const { JWT_SECRET = 'dev-secret' } = process.env;
+const jwt = require("jsonwebtoken");
+const { JWT_SECRET = "dev-secret" } = process.env;
 
 module.exports = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const token = req.headers.authorization?.replace("Bearer ", "");
 
   if (!token) {
-    return res.status(401).send({ message: 'Authorization required' });
+    return res.status(403).send({ message: "Authorization required" });
   }
 
   let payload;
 
   try {
-    payload = jwt.verify(token, JWT_SECRET);
-    
+    payload = jwt.verify(token, JWT_SECRET); // Verifica el token JWT
   } catch (err) {
-    return res.status(401).send({ message: 'Invalid token' });
+    return res.status(403).send({ message: "Invalid token" });
   }
 
-  req.user = payload; 
-  next();
+  req.user = payload; // Agrega la información del usuario al request
+  next(); // Continúa con el siguiente middleware o controlador
 };

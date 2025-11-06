@@ -1,16 +1,28 @@
-const express = require('express');
-const { userValidation, loginValidation } = require('../middlewares/validator');
-const { createUser, login, getCurrentUser, updateUserProfile, updateUserAvatar  } = require('../controllers/users');
-const auth = require('../middlewares/auth'); 
+const express = require("express");
+const usersRouter = express.Router();
+const {
+  getUsers,
+  getUserById,
+  getMe,
+  setUserInfo,
+  setUserAvatar,
+  createUser,
+  login,
+} = require("../controllers/users");
+const auth = require("../middlewares/auth"); // Middleware de autenticación
 
-const router = express.Router();
+// --- Rutas públicas (no requieren autenticación) ---
+usersRouter.post("/signup", createUser); // Registro
+usersRouter.post("/signin", login); // Inicio de sesión
 
-router.post('/signup', userValidation, createUser); 
-router.post('/signin', loginValidation , login); 
+// --- Middleware global para proteger todo lo demás ---
+usersRouter.use(auth); // A partir de aquí todas las rutas requieren token válido
 
+// --- Rutas privadas (solo accesibles con token válido) ---
+usersRouter.get("/", getUsers);
+usersRouter.get("/me", getMe);
+usersRouter.get("/:id", getUserById);
+usersRouter.patch("/me", setUserInfo);
+usersRouter.patch("/me/avatar", setUserAvatar);
 
-router.get('/me', auth, getCurrentUser);
-router.patch('/me', auth, updateUserProfile);
-router.patch('/me/avatar', auth, updateUserAvatar);
-
-module.exports = router;
+module.exports = usersRouter;

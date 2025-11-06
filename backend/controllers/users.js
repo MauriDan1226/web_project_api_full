@@ -1,117 +1,148 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/user');
-const UnauthorizedError = require('../errors/unauthorizedError');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/user");
 
-const { JWT_SECRET = 'dev-secret' } = process.env;
+const { NODE_ENV, JWT_SECRET } = process.env;
 
-// POST /signup
-
-module.exports.createUser = (req, res, next) => {
-  const { name = 'Jacques Cousteau', about = 'Explorador', avatar = 'https://practicum-content.s3.us-west-1.amazonaws.com/resources/moved_avatar_1604080799.jpg', email, password } = req.body;
-  
-
-  if (!email || !password) {
-    return res.status(400).send({ message: 'Email y contraseña son obligatorios' });
+/* GET /users */
+module.exports.getUsers = async (req, res, next) => {
+  try {
+    const users = await User.find({});
+    res.status(200).send(users);
+  } catch (err) {
+    next(err);
   }
-
-  bcrypt.hash(password, 10)
-    .then((hash) => User.create({ name, about, avatar, email, password: hash }))
-    .then((user) => res.status(201).send({
-      _id: user._id,
-      email: user.email,
-      name: user.name,
-      about: user.about,
-      avatar: user.avatar,
-    }))
-    .catch((err) => {
-      console.error('Error creando usuario:', err);
-
-      if (err.code === 11000) { 
-        return res.status(409).send({ message: 'El email ya está registrado' });
-      }
-      if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Datos inválidos' });
-      }
-      return next(err); 
-    });
 };
 
-
-// POST /signin
-module.exports.login = (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).send({ message: 'Email y contraseña son obligatorios' });
+/* GET /users/:id */
+module.exports.getUserById = async (req, res, next) => {
+  try {
+    const id = req.params.id || req.params.userId; // por si tu ruta usa :userId
+    const user = await User.findById(id).orFail();
+    res.status(200).send(user);
+  } catch (err) {
+    next(err); // CastError/DocumentNotFoundError los mapea tu errorHandler
   }
+};
 
-  User.findOne({ email }).select('+password')
-    .then((user) => {
-      console.log('🧪 Usuario:', user);
-      if (!user) {
-        return res.status(401).send({ message: 'Usuario no encontrado' });
-      }
+/* GET /users/me */
+module.exports.getMe = async (req, res, next) => {
+  try {
+    const me = await User.findById(req.user._id).orFail();
+    res.status(200).send(me);
+  } catch (err) {
+    next(err);
+  }
+};
 
-      return bcrypt.compare(password, user.password)
-        .then((matched) => {
-          if (!matched) {
-            return res.status(401).send({ message: 'Contraseña incorrecta' });
-          }
+/* POST /signup */
+module.exports.createUser = async (req, res, next) => {
+  try {
+    const { name, about, avatar, email, password } = req.body;
 
-          const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
-          res.send({ token });
-        });
-    })
-    .catch((err) => {
-      console.error('Error en /signin:', err);
-      res.status(500).send({ message: 'Error interno del servidor' });
+    if (!email || !password) {
+      return res
+        .status(400)
+        .send({ message: "Email y password son obligatorios" });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name, // si no vienen, el modelo aplica defaults
+      about,
+      avatar,
+      email,
+      password: hash,
     });
+
+    const data = user.toObject();
+    delete data.password;
+    res.status(201).send(data);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).send({ message: "El correo ya está registrado" });
+    }
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .send({ message: "Datos inválidos al crear el usuario" });
+    }
+    next(err);
+  }
 };
 
-// GET /users/me
-module.exports.getCurrentUser = (req, res, next) => {
-  User.findById(req.user._id)
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({ message: 'Usuario no encontrado' });
-      }
-      res.send(user);
-    })
-    .catch(next);
+/* POST /signin */
+module.exports.login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .send({ message: "Correo y contraseña son obligatorios" });
+    }
+
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      return res.status(401).send({ message: "Credenciales incorrectas" });
+    }
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      return res.status(401).send({ message: "Credenciales incorrectas" });
+    }
+
+    const token = jwt.sign(
+      { _id: user._id },
+      NODE_ENV === "production" ? JWT_SECRET : "dev-secret",
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).send({ token });
+  } catch (err) {
+    next(err);
+  }
 };
 
-// PATCH /users/me
-module.exports.updateUserProfile = (req, res, next) => {
-  const { name, about } = req.body;
+/* PATCH /users/me */
+module.exports.setUserInfo = async (req, res, next) => {
+  try {
+    // Verificar que el usuario está editando su propio perfil
+    if (req.user._id !== req.params.userId) {
+      return res.status(403).send({ message: "No puedes editar este perfil" });
+    }
 
-  User.findByIdAndUpdate(
-    req.user._id,
-    { name, about },
-    { new: true, runValidators: true }
-  )
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({ message: 'Usuario no encontrado' });
-      }
-      res.send(user);
-    })
-    .catch(next);
+    const { name, about } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user._id, // Solo permite modificar el perfil del usuario autenticado
+      { name, about },
+      { new: true, runValidators: true } // sin upsert
+    ).orFail();
+
+    res.status(200).send(user);
+  } catch (err) {
+    next(err);
+  }
 };
 
-module.exports.updateUserAvatar = (req, res, next) => {
-  const { avatar } = req.body;
+/* PATCH /users/me/avatar */
+module.exports.setUserAvatar = async (req, res, next) => {
+  try {
+    // Verificar que el usuario está editando su propio avatar
+    if (req.user._id !== req.params.userId) {
+      return res.status(403).send({ message: "No puedes editar este avatar" });
+    }
 
-  User.findByIdAndUpdate(
-    req.user._id,
-    { avatar },
-    { new: true, runValidators: true }
-  )
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({ message: 'Usuario no encontrado' });
-      }
-      res.send(user);
-    })
-    .catch(next);
+    const { avatar } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user._id, // Solo permite modificar el avatar del usuario autenticado
+      { avatar },
+      { new: true, runValidators: true } // sin upsert
+    ).orFail();
+
+    res.status(200).send(user);
+  } catch (err) {
+    next(err);
+  }
 };

@@ -1,37 +1,45 @@
-const baseUrl = import.meta.env.VITE_BASE_URL || 'https://api.ana.chickenkiller.com';
+export const BASE_URL = "https://se-register-api.en.tripleten-services.com/v1";
 
-export const register = ({email, password}) => {
-  return fetch(`${baseUrl}/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, name: 'Jacques Cousteau', about: 'Explorador', avatar: 'https://practicum-content.s3.us-west-1.amazonaws.com/resources/moved_avatar_1604080799.jpg' }),
-  }).then(res => {
-    if (res.ok) return res.json();
-    return Promise.reject(`Error en el registro: ${res.status}`);
-  });
+//  Helper para manejar respuestas de la API
+const handleResponse = async (res) => {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return Promise.reject(
+      data?.message || `Error en la solicitud: ${res.status}`
+    );
+  }
+  return data;
 };
 
-export const authorize = ({email, password}) => {
-  return fetch(`${baseUrl}/signin`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  }).then(res => {
-    if (res.ok) return res.json();
-    return Promise.reject(`Error en el login: ${res.status}`);
-  });
-};
-
-export const checkToken = (token) => {
-  return fetch(`${baseUrl}/users/me`, {
-    method: 'GET',
+//  Registro de usuario (POST /signup)
+export const register = (email, password) => {
+  return fetch(`${BASE_URL}/signup`, {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  }).then(handleResponse);
+};
+
+//  Autorización de usuario (POST /signin)
+export const authorize = (email, password) => {
+  return fetch(`${BASE_URL}/signin`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  }).then(handleResponse);
+};
+
+//  Validación de token (GET /users/me)
+export const checkToken = (token) => {
+  return fetch(`${BASE_URL}/users/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-  }).then(res => {
-    if (res.ok) return res.json();
-    return Promise.reject(`Token inválido: ${res.status}`);
-  });
+  }).then(handleResponse);
 };
-

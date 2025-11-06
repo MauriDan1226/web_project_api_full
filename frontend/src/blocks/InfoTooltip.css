@@ -1,11 +1,9 @@
 .tooltip {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
   display: none;
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
   justify-content: center;
   align-items: center;
 }
@@ -16,111 +14,28 @@
 
 .tooltip__container {
   background: white;
-  padding: 40px;
-  border-radius: 8px;
+  padding: 20px;
+  border-radius: 10px;
   text-align: center;
-  max-width: 280px;
-  width: 100%;
-  height: 308px;
+  position: relative;
 }
 
-.tooltip__icon_success {
-  width: 120px;
-  height: 120px;
-  background: url('../images/succes-icon.png') center/cover no-repeat;
-  margin: 30px auto 20px;
-}
-
-.tooltip__icon_fail {
-  width: 120px;
-  height: 120px;
-  background: url('../images/fail-icon.png') center/cover no-repeat;
-  margin: 30px auto 20px;
+.tooltip__icon {
+  width: 50px;
+  margin-bottom: 20px;
 }
 
 .tooltip__message {
-  font-family: Inter;
-  font-weight: 900;
-  font-size: 24px;
-  line-height: 100%;
-  letter-spacing: 0%;
-  text-align: center;
-  color: #000000;
-  font-family: Inter;
-  background: none;
-  margin-top: 50px;
-
+  font-size: 16px;
+  color: #333;
 }
 
 .tooltip__close {
   position: absolute;
-  top: 100px;
-  right: 128px;
+  top: 10px;
+  right: 10px;
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
-  width: 30px;
-  height: 30px;
-}
-
-.tooltip__close:hover {
-  opacity: 0.7;
-}
-
-
-@media screen and (min-width: 768px) {
-  .tooltip__container {
-    background: white;
-    padding: 40px;
-    border-radius: 8px;
-    text-align: center;
-    max-width: 330px;
-    width: 100%;
-    height: 230px;
-  }
-
-  .tooltip__close {
-    position: absolute;
-    top: 160px;
-    right: 130px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #FFFFFF;
-    width: 40px;
-    height: 40px;
-  }
-
-}
-
-
-@media screen and (min-width: 1280px) {
-
-
-.tooltip__container {
-  background: white;
-  padding: 40px;
-  border-radius: 8px;
-  text-align: center;
-  max-width: 430px;
-  width: 100%;
-  height: 330px;
-}
-
-
-.tooltip__close {
-  position: absolute;
-  top: 200px;
-  right: 330px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #FFFFFF;
-  width: 40px;
-  height: 40px;
-}
-
 }

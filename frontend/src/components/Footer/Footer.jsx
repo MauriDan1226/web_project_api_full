@@ -1,12 +1,6 @@
 
-
-function Footer() {
-    return (
-        <footer className="footer">
-    <p className="footer-copyright">&#169; 2025 Around The U.S.</p>
-  </footer>
-
-    )
+const Footer = () => {
+  return (<footer className="footer">&copy; 2024 Mauricio Ramirez</footer>);
 }
-
-export default Footer
+ 
+export default Footer;

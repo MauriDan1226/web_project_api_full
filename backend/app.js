@@ -1,88 +1,140 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const path = require('path');
-const { errors: celebrateErrors } = require('celebrate');
-const expressWinston = require('express-winston');
-const winston = require('winston');
+require("dotenv").config();
 
-const { login, createUser } = require('./controllers/users');
-const usersRouter = require('./routes/users');
-const cardsRouter = require('./routes/cards');
-const auth = require('./middlewares/auth');
-const errorHandler = require('./middlewares/errorHandler');
-
+const express = require("express");
 const app = express();
 
-const { PORT = 3000, MONGODB_URI } = process.env;
+const mongoose = require("mongoose");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const cookieParser = require("cookie-parser");
+const { errors: celebrateErrors } = require("celebrate");
+const expressWinston = require("express-winston");
+const winston = require("winston");
 
-// Middleware para parsear JSON
-app.use(express.json());
+// Controladores de auth (públicos)
+const { login, createUser } = require("./controllers/users");
 
-// Lista de dominios permitidos para CORS (producción y localhost)
+// Routers privados
+const usersRouter = require("./routes/users");
+const cardsRouter = require("./routes/cards");
+
+// Middleware de auth (protege lo que sigue)
+const auth = require("./middlewares/auth");
+// const errorHandler = require("./middlewares/errorHandler");
+
+const {
+  PORT = 3000,
+  MONGODB_URI = "mongodb://localhost:27017/aroundb",
+  NODE_ENV = "development",
+} = process.env;
+
+/* ───────── Seguridad básica ───────── */
+app.disable("x-powered-by");
+app.use(helmet());
+
+/* ───────── CORS ───────── */
 const allowedOrigins = [
-  'https://around.ana.chickenkiller.com',
-  'http://localhost:3000',
+  "http://localhost:3000",
+  "http://localhost:3001",
+  // 'https://tu-dominio.com',
 ];
 
-app.use(cors());
-app.options('*', cors());
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
+// Preflight (Express 5 / path-to-regexp v6)
+app.options(/.*/, cors());
 
-// Logger de solicitudes
-app.use(expressWinston.logger({
-  transports: [
-    new winston.transports.File({ filename: path.join(__dirname, 'logs/request.log') }),
-  ],
-  format: winston.format.json(),
-}));
+/* ───────── Rate limit ───────── */
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // más estricto para login/registro
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(globalLimiter);
 
-// Rutas públicas
-app.post('/signup', createUser);
-app.post('/signin', login);
+/* ───────── Parsers ───────── */
+app.use(express.json());
+app.use(cookieParser());
 
-// Middleware de autorización
-app.use(auth);
+/* ───────── Logging de requests ───────── */
+app.use(
+  expressWinston.logger({
+    transports: [new winston.transports.Console()],
+    format: winston.format.json(),
+  })
+);
 
-// Rutas privadas
-app.use('/users', usersRouter);
-app.use('/cards', cardsRouter);
+/* ───────── Rutas públicas (sin auth) ───────── */
+app.post("/signup", authLimiter, createUser); // No protegido
+app.post("/signin", authLimiter, login); // No protegido
 
-// Servir frontend React en producción
-app.use(express.static(path.join(__dirname, 'frontend', 'build')));
+/* ───────── Healthcheck / raíz ───────── */
+app.get("/healthz", (req, res) => res.status(200).json({ status: "ok" }));
+app.get("/", (req, res) =>
+  res.send(`Servidor Express funcionando en el puerto ${PORT}`)
+);
 
-// Cualquier ruta no capturada va al index.html de React
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'build', 'index.html'));
+/* ───────── A partir de aquí TODO requiere auth ───────── */
+app.use(auth); // Middleware de autenticación (proteger las siguientes rutas)
+
+/* ───────── Rutas privadas ───────── */
+app.use("/users", usersRouter);
+app.use("/cards", cardsRouter);
+
+/* ───────── 404 ───────── */
+app.use((req, res) => {
+  res.status(404).send({ message: "Recurso no encontrado" });
 });
 
-// Manejo de errores de celebrate
+/* ───────── Errores de celebrate ───────── */
 app.use(celebrateErrors());
 
-// Logger de errores
-app.use(expressWinston.errorLogger({
-  transports: [
-    new winston.transports.File({ filename: path.join(__dirname, 'logs/error.log') }),
-  ],
-  format: winston.format.json(),
-}));
+/* ───────── Logging de errores ───────── */
+app.use(
+  expressWinston.errorLogger({
+    transports: [new winston.transports.Console()],
+    format: winston.format.json(),
+  })
+);
 
-// Middleware centralizado de errores
-app.use(errorHandler);
+// app.use(errorHandler);
 
-// Conexión a MongoDB y arranque del servidor
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+/* ───────── Mongo ───────── */
+mongoose.set("strictQuery", false);
+
+mongoose
+  .connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 }) // sin opciones deprecadas
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`Servidor corriendo en el puerto ${PORT}`);
+      console.log(`Server up on port ${PORT} (${NODE_ENV})`);
     });
   })
   .catch((err) => {
-    console.error('Error conectando a MongoDB:', err);
+    console.error(" Error conectando a MongoDB:", err);
     process.exit(1);
   });
+
+process.on("unhandledRejection", (reason) => {
+  console.error("UNHANDLED REJECTION:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+  process.exit(1);
+});
 
 module.exports = app;
