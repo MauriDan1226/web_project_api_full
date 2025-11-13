@@ -9,10 +9,10 @@ class Api {
     return res.ok ? res.json() : Promise.reject(`Error: ${res.status}`);
   }
 
-  getUserInfo() {
-    return fetch(`${this.baseUrl}/users/me`, {
+  /*  getUserInfo() {
+    return fetch(`${this._baseUrl}/users/me`, {
       method: "GET",
-      headers: this.headers,
+      headers: { ...this._headers, authorization: getToken() },
     }).then((res) => {
       if (res.ok) {
         return res.json();
@@ -24,7 +24,7 @@ class Api {
       }
     });
   }
-
+ */
   getInitialCards() {
     return fetch(`${this._baseUrl}/cards`, {
       headers: { ...this._headers },

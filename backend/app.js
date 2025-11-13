@@ -21,7 +21,12 @@ const cardsRouter = require("./routes/cards");
 
 // Middleware de auth (protege lo que sigue)
 const auth = require("./middlewares/auth");
-// const errorHandler = require("./middlewares/errorHandler");
+
+// Manejador centralizado de errores
+const errorHandler = require("./middlewares/errorHandler");
+
+// Validadores de celebrate
+const { userValidation, loginValidation } = require("./middlewares/validator");
 
 const {
   PORT = 3000,
@@ -37,7 +42,7 @@ app.use(helmet());
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
-  // 'https://tu-dominio.com',
+  // "https://tu-dominio.com",
 ];
 
 app.use(
@@ -49,7 +54,6 @@ app.use(
     credentials: true,
   })
 );
-// Preflight (Express 5 / path-to-regexp v6)
 app.options(/.*/, cors());
 
 /* ───────── Rate limit ───────── */
@@ -61,7 +65,7 @@ const globalLimiter = rateLimit({
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20, // más estricto para login/registro
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -74,14 +78,21 @@ app.use(cookieParser());
 /* ───────── Logging de requests ───────── */
 app.use(
   expressWinston.logger({
-    transports: [new winston.transports.Console()],
-    format: winston.format.json(),
+    transports: [
+      new winston.transports.File({ filename: "request.log" }), // guarda solicitudes
+      new winston.transports.Console(), // también muestra en consola
+    ],
+    format: winston.format.json(), // formato JSON
+    meta: true,
+    msg: "HTTP {{req.method}} {{req.url}} {{res.statusCode}}",
+    expressFormat: false,
+    colorize: false,
   })
 );
 
 /* ───────── Rutas públicas (sin auth) ───────── */
-app.post("/signup", authLimiter, createUser); // No protegido
-app.post("/signin", authLimiter, login); // No protegido
+app.post("/signup", authLimiter, userValidation, createUser);
+app.post("/signin", authLimiter, loginValidation, login);
 
 /* ───────── Healthcheck / raíz ───────── */
 app.get("/healthz", (req, res) => res.status(200).json({ status: "ok" }));
@@ -90,15 +101,17 @@ app.get("/", (req, res) =>
 );
 
 /* ───────── A partir de aquí TODO requiere auth ───────── */
-app.use(auth); // Middleware de autenticación (proteger las siguientes rutas)
+app.use(auth);
 
 /* ───────── Rutas privadas ───────── */
 app.use("/users", usersRouter);
 app.use("/cards", cardsRouter);
 
-/* ───────── 404 ───────── */
-app.use((req, res) => {
-  res.status(404).send({ message: "Recurso no encontrado" });
+/* ───────── 404 (centralizado) ───────── */
+app.use((req, res, next) => {
+  const err = new Error("Recurso no encontrado");
+  err.statusCode = 404;
+  next(err);
 });
 
 /* ───────── Errores de celebrate ───────── */
@@ -107,18 +120,22 @@ app.use(celebrateErrors());
 /* ───────── Logging de errores ───────── */
 app.use(
   expressWinston.errorLogger({
-    transports: [new winston.transports.Console()],
+    transports: [
+      new winston.transports.File({ filename: "error.log" }), // guarda errores
+      new winston.transports.Console(), // y muestra en consola
+    ],
     format: winston.format.json(),
   })
 );
 
-// app.use(errorHandler);
+/* ───────── Manejador centralizado de errores (último) ───────── */
+app.use(errorHandler);
 
 /* ───────── Mongo ───────── */
 mongoose.set("strictQuery", false);
 
 mongoose
-  .connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 }) // sin opciones deprecadas
+  .connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Server up on port ${PORT} (${NODE_ENV})`);

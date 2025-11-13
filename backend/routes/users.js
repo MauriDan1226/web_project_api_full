@@ -1,28 +1,49 @@
 const express = require("express");
-const usersRouter = express.Router();
+const { celebrate, Joi, Segments } = require("celebrate");
+const { validateURL } = require("../middlewares/validator"); // tu custom URL validator
+
 const {
   getUsers,
   getUserById,
   getMe,
   setUserInfo,
   setUserAvatar,
-  createUser,
-  login,
 } = require("../controllers/users");
-const auth = require("../middlewares/auth"); // Middleware de autenticación
 
-// --- Rutas públicas (no requieren autenticación) ---
-usersRouter.post("/signup", createUser); // Registro
-usersRouter.post("/signin", login); // Inicio de sesión
+const usersRouter = express.Router();
 
-// --- Middleware global para proteger todo lo demás ---
-usersRouter.use(auth); // A partir de aquí todas las rutas requieren token válido
+/*
+  IMPORTANTE:
+  - /signup y /signin QUEDAN en app.js (públicas).
+  - Este router se monta como /users DESPUÉS de app.use(auth) en app.js,
+    así que TODAS estas rutas ya están protegidas.
+*/
 
-// --- Rutas privadas (solo accesibles con token válido) ---
+/* ───────── Validadores locales ───────── */
+const idValidation = celebrate({
+  [Segments.PARAMS]: Joi.object().keys({
+    id: Joi.string().hex().length(24).required(), // ObjectId de Mongo
+  }),
+});
+
+const updateUserValidation = celebrate({
+  [Segments.BODY]: Joi.object().keys({
+    name: Joi.string().min(2).max(30).required(),
+    about: Joi.string().min(2).max(30).required(),
+  }),
+});
+
+const updateAvatarValidation = celebrate({
+  [Segments.BODY]: Joi.object().keys({
+    avatar: Joi.string().required().custom(validateURL),
+  }),
+});
+
+/* ───────── Rutas privadas ───────── */
 usersRouter.get("/", getUsers);
 usersRouter.get("/me", getMe);
-usersRouter.get("/:id", getUserById);
-usersRouter.patch("/me", setUserInfo);
-usersRouter.patch("/me/avatar", setUserAvatar);
+usersRouter.get("/:id", idValidation, getUserById);
+usersRouter.patch("/me", updateUserValidation, setUserInfo);
+usersRouter.patch("/me/avatar", updateAvatarValidation, setUserAvatar);
 
 module.exports = usersRouter;
